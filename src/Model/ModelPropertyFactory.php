@@ -34,34 +34,27 @@ class ModelPropertyFactory
      */
     public function create(): ModelProperty
     {
-        $vars = $this->schema->__debugInfo();
-        $default = $vars['columns'][$this->columnName]['default'] ?? '';
+        $column = $this->schema->getColumn($this->columnName);
+        $default = $column['default'] ?? '';
 
         return (new ModelProperty())
             ->setName($this->columnName)
             ->setType($this->schema->getColumnType($this->columnName))
             ->setDefault((string)$default)
-            ->setIsPrimaryKey($this->isPrimaryKey($vars, $this->columnName))
+            ->setIsPrimaryKey($this->isPrimaryKey())
             ->setIsHidden(in_array($this->columnName, $this->entity->getHidden()))
             ->setIsAccessible($this->isAccessible())
             ->setValidationSet($this->table->validationDefault(new Validator())->field($this->columnName));
     }
 
     /**
-     * @param array $schemaDebugInfo debug array from TableSchema
-     * @param string $columnName column name
+     * Checks if this column is part of the primary key.
+     *
      * @return bool
      */
-    private function isPrimaryKey(array $schemaDebugInfo, string $columnName): bool
+    private function isPrimaryKey(): bool
     {
-        // ignore coverage since this condition should not be met
-        if (!isset($schemaDebugInfo['constraints']['primary']['columns'])) {
-            // @codeCoverageIgnoreStart
-            return false;
-            // @codeCoverageIgnoreEnd
-        }
-
-        return in_array($columnName, $schemaDebugInfo['constraints']['primary']['columns']);
+        return in_array($this->columnName, $this->schema->getPrimaryKey());
     }
 
     /**
